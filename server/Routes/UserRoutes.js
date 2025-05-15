@@ -26,7 +26,7 @@ router.post(
             if (existingUser) {
                 return res.status(400).json({ message: 'Email already exists' });
             }
-            // Hash the password before saving (you should use bcrypt or similar in production)
+
             const hashedPassword = await bcrypt.hash(password, 10);
 
             const newUser = new User({ name, email, password: hashedPassword, role });
@@ -42,4 +42,45 @@ router.post(
     }
 );
 
+router.post(
+    '/users/login',
+    [
+        body('email').isEmail().withMessage('Valid email is required'),
+        body('password').notEmpty().withMessage('Password is required'),
+    ],
+    async (req, res) => {
+        const errors = validationResult(req);
+        if (!errors.isEmpty()) {
+            return res.status(400).json({ errors: errors.array() });
+        }
+
+        try {
+            const { email, password } = req.body;
+
+            const user = await User.findOne({ email });
+            if (!user) {
+                return res.status(400).json({ message: 'Invalid email or password' });
+            }
+
+            const isMatch = await bcrypt.compare(password, user.password);
+            if (!isMatch) {
+                return res.status(400).json({ message: 'Invalid email or password' });
+            }
+
+            console.log('User logged in:', user);
+
+            res.status(200).json({ message: 'Login successful', user });
+        } catch (error) {
+            console.error('Error logging in:', error.message);
+            res.status(500).json({ message: 'Error logging in', error: error.message });
+        }
+    }
+);
+
 export default router;
+
+// This file defines routes for user registration and login.
+// The '/users/register' route handles user registration, including validation, password hashing, and saving the user to the database.
+// The '/users/login' route handles user login, including validation, password comparison, and returning the user data upon successful login.
+// Both routes use express-validator for input validation and bcrypt for password hashing and comparison.
+// Errors are handled and appropriate responses are sent back to the client.
