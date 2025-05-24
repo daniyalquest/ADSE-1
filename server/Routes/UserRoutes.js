@@ -5,8 +5,18 @@ import bcrypt from 'bcrypt';
 
 const router = express.Router();
 
+router.get('/', async (req, res) => {
+    try {
+        const users = await User.find({});
+        res.status(200).json(users);
+    } catch (error) {
+        console.error('Error in user routes:', error.message);
+        res.status(500).json({ message: 'Internal server error', error: error.message });
+    }
+});
+
 router.post(
-    '/users/register',
+    '/register',
     [
         body('name').notEmpty().withMessage('Name is required'),
         body('email').isEmail().withMessage('Valid email is required'),
@@ -43,7 +53,7 @@ router.post(
 );
 
 router.post(
-    '/users/login',
+    '/login',
     [
         body('email').isEmail().withMessage('Valid email is required'),
         body('password').notEmpty().withMessage('Password is required'),
